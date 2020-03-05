@@ -16,13 +16,106 @@
 
 package com.example.appengine.demos.springboot;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.appengine.demos.springboot.services.OneClickServiceImpl;
+import com.example.appengine.demos.springboot.services.WebpayMallServiceImpl;
+import com.example.appengine.demos.springboot.config.GenericResponse;
+import com.example.appengine.demos.springboot.model.Compra;
+import com.example.appengine.demos.springboot.model.CompraOneClick;
+import com.example.appengine.demos.springboot.model.UsuarioOneClick;
+import com.example.appengine.demos.springboot.services.WebpayServiceImpl;
+
 @RestController
+@Controller
 public class HelloworldController {
-  @GetMapping("/")
-  public String hello() {
-    return "Hello world - springboot-appengine-standard!";
-  }
+
+	@Autowired
+	private WebpayServiceImpl webpayService;
+
+	@Autowired
+	private WebpayMallServiceImpl webpayMallService;
+
+	@Autowired
+	private OneClickServiceImpl oneClickService;
+
+	@GetMapping("/hello")
+	public String hello() {
+		return "Hello world - Proyecto registro de ventas!";
+	}
+
+	@CrossOrigin
+	@PostMapping("/get-token")
+	public ResponseEntity<GenericResponse> webPayRequest(@RequestBody Compra compra) throws Exception {
+		return webpayService.createRequest(compra);
+	}
+
+	@CrossOrigin
+	@PostMapping("/webpay-result")
+	public void webPayEnd(HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
+
+		webpayService.validateTransaction(httpRequest, httpResponse);
+
+	}
+
+	@CrossOrigin
+	@PostMapping("/get-qr")
+	public ResponseEntity<GenericResponse> getQr(@RequestBody String token) {
+
+		return webpayService.getQr(token);
+	}
+
+	@CrossOrigin
+	@PostMapping("webpay-mall/get-token")
+	public ResponseEntity<GenericResponse> webPayMallRequest(@RequestBody Compra compra) throws Exception {
+		return webpayMallService.createRequest(compra);
+	}
+
+	@PostMapping("webpay-mall/webpay-result")
+	public void webPayMallEnd(HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
+
+		webpayMallService.validateTransaction(httpRequest, httpResponse);
+
+	}
+
+	@CrossOrigin
+	@PostMapping("oneClick/registerUser")
+	public ResponseEntity<GenericResponse> registerUser(@RequestBody UsuarioOneClick user) throws Exception {
+		return oneClickService.createRequest(user);
+	}
+
+	@CrossOrigin
+	@PostMapping("oneClick/confirmRegister")
+	public void registerUser(HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws Exception {
+		oneClickService.confirmRegisterUser(httpRequest, httpResponse);
+	}
+
+	@CrossOrigin
+	@PostMapping("oneClick/registrarPago")
+	public ResponseEntity<GenericResponse> registrarPago(@RequestBody CompraOneClick compra) throws Exception {
+		return oneClickService.realizaPago(compra);
+	}
+
+	@CrossOrigin
+	@PostMapping("oneClick/removerUsuario")
+	public ResponseEntity<GenericResponse> removerUsuario(@RequestBody CompraOneClick compra) throws Exception {
+		return oneClickService.removerUsuario(compra);
+	}
+
+	@CrossOrigin
+	@PostMapping("oneClick/reversarPago")
+	public ResponseEntity<GenericResponse> reversarPago(@RequestBody CompraOneClick compra) throws Exception {
+		return oneClickService.reversarPago(compra);
+	}
+
 }

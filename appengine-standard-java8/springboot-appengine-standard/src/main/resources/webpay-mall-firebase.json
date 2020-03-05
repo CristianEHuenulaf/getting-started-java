@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "webpay-mall",
+  "private_key_id": "0982de41f13c63bc35165309d145c14a777787f5",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQC3Qpria1spFyhh\nj3uplW67au/ImAC6sTWj/QD2T8FDnE05E9IhfREx2Cz4jL7PzcDDm2to8/ljk3aj\nQKNUXb4l8TVki0hdM/1aYcAb9qOjFQGTNmWLZ/Y6sGJqWPV3LtGPQok/+GGMrTPU\nihV+syx7o5f0Bbc5ZlwquLxJSINy8j7osJU7zomu2/jS1gc0X9xikmnU9EyRiQ2v\nurWp2WwQZkq+hKJvmlena5z2PdGql49WKNm9Ew/z4VV4/+KSUY343TVaceQq6BAt\nib2bAL7E6quV49tavD++FNxA6Cwse7r3+tIJxSIwN/5AhRpKYbwFa3e9lVBZAk4x\nLgRkTVEhAgMBAAECggEAWPd0ycbkkqYzbGmD12g8QbBAiFmCwR+Wsu34sZs2b+RJ\neRQuRyO4XUJdUqzBVZDFrDCfjGwk/jpwtgCDSknYLgNTsGQN1XGP5XjfErRB7MId\n6aHW2j62QveuT4KwaBPKmInsp6mlce4D44LFvKSvS7a35jeAI9WVmQfmII2bgwlV\nQGpGJFlXpTvPQes1HkUpJmpagURS+/XX91juOXonWvkJCvZDYjN2vaFE4myNWtkd\n2Jfy6nkRQDWCAuVJ8XD+eT5wUrB8aTMa1uPv/uBPfkcfOuUtCtzWGCbmVvzcOJFJ\nYc2ZpPS/8ofgKxk5Q78hOtQ74FM7uwtNPIUOgSnLIQKBgQDauOY4ydJNdJQIIDhZ\nbXoma1UdGK57Qz2ZtyDLq0vn0VCOn/ogsG1Vh6V3n0FXhqwo8GZKrHXORqkX/wiN\nx9AK8N+1lK+GOlnQrbBqOdsJ+r1yu1IEOAWIrmMg8h2sKkLgIaXgdwvRB8r3Hrvd\n9mhC69PNSkbMjs2zQ0UnMNlirwKBgQDWfnRfzbeFK6Qlf99YFqIw8sUMh3+m8rB7\nhmbCYykHMsl9ASElb7AfZ1p/r4xIISn2ULqMeHnCNqjvMvi1W0AtRa6BHX09nL/o\nxtvo0wP9SCj+Y7T8qb9Ew6IJmU5N4pJxPtAOU3YCwslxD6/WtkO3VILy9XhjGowU\n+f4lcEe9LwKBgGA5OA+DuqGYyAdLJX8ySqrcTXWfhiN0UYVuq17u3VX/IBGfD8uR\n0ofuRT17MqPu+46HNHllpe455+pGqNy3Ky+lCMY5w36p7RmBUDtreJHLXc0727k/\nbC/ViIbV/Xfgn8s7Al7eALTVWNWfD8d2wCew2F1YcA1ORfC3h5TWSMzBAoGAVnjy\nh7ESvIBkk62iqAuv5ZXp9OwnfXG3zoTXpqR9ZOaHrnqnF0WYtoBfTrzCDE46cZAI\nNRtY0wBgSNa+x7Z7AAVonar607z+7WRGQe3YXOMbi7s8uuPgNWO9Tqtcky+1pCwT\nisMA/4nx1j/hvukKEb3jcPmfSCzqroY+fG9wrIcCgYBoydnYVFVUMbsyxKxSd+uv\nzk1xfEEbOVVWPEKjjsRwNyqlSMXJ5sIZGDIAAwyiAkjy4s02aMghXZz6Hbo4EU0T\nu34WU7NrqTAg6L0Ws+qQ1/ZTX8mJxdfjIlqLrEn2SZyKw5sUUPnwWiBEDSa4oXvz\nT2LHF/aAPg+w4S253J6SCg==\n-----END PRIVATE KEY-----\n",
+  "client_email": "firebase-adminsdk-ucv4p@webpay-mall.iam.gserviceaccount.com",
+  "client_id": "117289101519630373057",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-ucv4p%40webpay-mall.iam.gserviceaccount.com"
+}
