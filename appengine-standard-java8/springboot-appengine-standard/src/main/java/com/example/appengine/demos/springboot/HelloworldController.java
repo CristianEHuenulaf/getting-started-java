@@ -33,6 +33,7 @@ import com.example.appengine.demos.springboot.services.WebpayMallServiceImpl;
 import com.example.appengine.demos.springboot.config.GenericResponse;
 import com.example.appengine.demos.springboot.model.Compra;
 import com.example.appengine.demos.springboot.model.CompraOneClick;
+import com.example.appengine.demos.springboot.model.ReversaDTO;
 import com.example.appengine.demos.springboot.model.UsuarioOneClick;
 import com.example.appengine.demos.springboot.services.WebpayServiceImpl;
 
@@ -81,6 +82,7 @@ public class HelloworldController {
 		return webpayMallService.createRequest(compra);
 	}
 
+	@CrossOrigin
 	@PostMapping("webpay-mall/webpay-result")
 	public void webPayMallEnd(HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
 
@@ -116,6 +118,12 @@ public class HelloworldController {
 	@PostMapping("oneClick/reversarPago")
 	public ResponseEntity<GenericResponse> reversarPago(@RequestBody CompraOneClick compra) throws Exception {
 		return oneClickService.reversarPago(compra);
+	}
+	
+	@CrossOrigin
+	@PostMapping("anularPago")
+	public ResponseEntity<GenericResponse> anularPago(@RequestBody ReversaDTO compra) throws Exception {
+		return oneClickService.anularPago(compra);
 	}
 
 }

@@ -117,10 +117,10 @@ public class WebpayMallServiceImpl implements WebpayService {
 			Billing billing = new Billing();
 
 			if (!formAction.isEmpty()) {
-				billing.setIdBilling(billingId);
+				billing.setTransactionId(billingId);
 				billing.setToken(tokenWs);
-				FirebaseWebPayService firebaseWebpay = new FirebaseWebPayService(FirebaseWebPayService.initializerFirestoreToken(), FirebaseWebPayService.TOKEN);
-				firebaseWebpay.saveTokenBilling(billing.getIdBilling(), billing.getToken());
+				FirebaseWebPayService firebaseWebpay = new FirebaseWebPayService(FirebaseWebPayService.initializerFirestoreToken());
+				firebaseWebpay.saveBilling(billing.getTransactionId(), billing.getToken(), "");
 				genericResponse.setCode(200);
 				genericResponse.setMsg("Transaccion exitosa!");
 				genericResponse.setResponse(details);
@@ -191,10 +191,10 @@ public class WebpayMallServiceImpl implements WebpayService {
 		try {
 			JsonObject json = new Gson().fromJson(token, JsonObject.class);
 			String finalToken = json.get("token").getAsString();
-			FirebaseWebPayService firebaseWebpay = new FirebaseWebPayService(FirebaseWebPayService.initializerFirestoreToken(), FirebaseWebPayService.TOKEN);
+			FirebaseWebPayService firebaseWebpay = new FirebaseWebPayService(FirebaseWebPayService.initializerFirestoreToken());
 			Billing billing = firebaseWebpay.findBillingByToken(finalToken);
 
-			File file = QRCode.from(billing.getIdBilling()).to(ImageType.PNG).withSize(300, 300).file();
+			File file = QRCode.from(billing.getTransactionId()).to(ImageType.PNG).withSize(300, 300).file();
 			String base64 = Util.encoder(file.getAbsolutePath());
 
 			if (file.exists()) {

@@ -13,8 +13,10 @@ import org.springframework.stereotype.Service;
 
 import com.example.appengine.demos.springboot.config.GenericResponse;
 import com.example.appengine.demos.springboot.model.CompraOneClick;
+import com.example.appengine.demos.springboot.model.ReversaDTO;
 import com.example.appengine.demos.springboot.model.UsuarioOneClick;
 import com.example.appengine.demos.springboot.util.Util;
+import com.transbank.webpay.wswebpay.service.NullificationOutput;
 import com.transbank.webpayserver.webservices.OneClickFinishInscriptionOutput;
 import com.transbank.webpayserver.webservices.OneClickInscriptionOutput;
 import com.transbank.webpayserver.webservices.OneClickPayOutput;
@@ -22,6 +24,7 @@ import com.transbank.webpayserver.webservices.OneClickReverseInput;
 import com.transbank.webpayserver.webservices.OneClickReverseOutput;
 
 import cl.transbank.webpay.Webpay;
+import cl.transbank.webpay.WebpayNullify;
 import cl.transbank.webpay.WebpayOneClick;
 import cl.transbank.webpay.configuration.Configuration;
 import net.glxn.qrgen.core.image.ImageType;
@@ -90,15 +93,15 @@ public class OneClickServiceImpl {
 	
 	public ResponseEntity<GenericResponse> createRequest(UsuarioOneClick user) throws Exception {
 		
-		//String urlReturn = "https://pikapp-8be64.appspot.com/oneClick/confirmRegister";
-		String urlReturn = "http://localhost:8080/oneClick/confirmRegister";
+		String urlReturn = "https://pikapp-8be64.appspot.com/oneClick/confirmRegister";
+		//String urlReturn = "http://localhost:8080/oneClick/confirmRegister";
 		GenericResponse genericResponse = new GenericResponse();
 		HttpStatus status = null;
 		Map<String, Object> details = new HashMap<>();
 		Configuration configuration = new Configuration();
 		try {
 			configuration = generarConfiguracionTransBank();
-			WebpayOneClick transaction = new Webpay(configuration.forTestingWebpayOneClickNormal()).getOneClickTransaction();
+			WebpayOneClick transaction = new Webpay(configuration).getOneClickTransaction();
 			OneClickInscriptionOutput initResult = transaction.initInscription(user.getUserName(), user.getEmail(), urlReturn);
 			
 			String tokenWs = initResult.getToken();
@@ -139,7 +142,7 @@ public class OneClickServiceImpl {
 		Configuration configuration = new Configuration();
 		try {
 			configuration = generarConfiguracionTransBank();
-			WebpayOneClick transaction = new Webpay(configuration.forTestingWebpayOneClickNormal()).getOneClickTransaction();
+			WebpayOneClick transaction = new Webpay(configuration).getOneClickTransaction();
 			OneClickFinishInscriptionOutput result = transaction.finishInscription(token);
 			
 			int responseCode = result.getResponseCode();
@@ -188,7 +191,7 @@ public class OneClickServiceImpl {
 		Configuration configuration = new Configuration();
 		try {
 			configuration = generarConfiguracionTransBank();
-			WebpayOneClick transaction = new Webpay(configuration.forTestingWebpayOneClickNormal()).getOneClickTransaction();
+			WebpayOneClick transaction = new Webpay(configuration).getOneClickTransaction();
 			boolean success = transaction.removeUser(compra.getTbkUser(), compra.getUserName());
 			if (success) {
 				details.put("estadoSolicitud", "Usuario removido exitosamente!");
@@ -221,24 +224,27 @@ public class OneClickServiceImpl {
 		Map<String, Object> details = new HashMap<>();
 		Configuration configuration = new Configuration();
 		try {
-			FirebaseWebPayService fire = new FirebaseWebPayService(FirebaseWebPayService.inicializarFirestorePikapp(),
-					FirebaseWebPayService.PIKAPP);
+			FirebaseWebPayService fire = new FirebaseWebPayService(FirebaseWebPayService.initializerFirestoreToken());
 			
 			configuration = generarConfiguracionTransBank();
-			WebpayOneClick transaction = new Webpay(Configuration.forTestingWebpayOneClickNormal()).getOneClickTransaction();
+			WebpayOneClick transaction = new Webpay(configuration).getOneClickTransaction();
 			OneClickPayOutput output = transaction.authorize(compra.getBuyOrder(), compra.getTbkUser(), compra.getUserName(), compra.getAmount());
 			if (output.getResponseCode() == 0) {
 				File file = QRCode.from(String.valueOf(output.getTransactionId())).to(ImageType.PNG).withSize(300, 300).file();
 				String base64 = Util.encoder(file.getAbsolutePath());
 				details.put("authorizationCode", output.getAuthorizationCode());
 				details.put("creditCardType", output.getCreditCardType().value());
+				details.put("buyOrder", compra.getBuyOrder());
 				details.put("last4CardDigits", output.getLast4CardDigits());
 				details.put("transactionId", output.getTransactionId());
 				details.put("responseCode", output.getResponseCode());
 				details.put("qr", base64);
 				
-				fire.updateBilling(output, compra, base64);
-				
+				fire.storage = fire.initializerStorage();
+//				String urlQr = fire.uploadFile(base64, compra.getSessionId()); 
+//				if(urlQr != null) {
+//					fire.updateBilling(output, compra, base64);
+//				}
 				genericResponse.setCode(200);
 				genericResponse.setMsg("Transaccion exitosa!");
 				genericResponse.setResponse(details);
@@ -269,7 +275,7 @@ public class OneClickServiceImpl {
 		Configuration configuration = new Configuration();
 		try {
 			configuration = generarConfiguracionTransBank();
-			WebpayOneClick transaction = new Webpay(configuration.forTestingWebpayOneClickNormal()).getOneClickTransaction();
+			WebpayOneClick transaction = new Webpay(configuration).getOneClickTransaction();
 			OneClickReverseInput input = new OneClickReverseInput();
 			input.setBuyorder(compra.getBuyOrder());
 			OneClickReverseOutput success = transaction.codeReverseOneClick(input);
@@ -294,6 +300,53 @@ public class OneClickServiceImpl {
 			genericResponse.setCode(500);
 			genericResponse.setMsg("Reversa Fallida!");
 			status = HttpStatus.NO_CONTENT;
+		}
+		return new ResponseEntity<>(genericResponse, status);
+	}
+	
+	public ResponseEntity<GenericResponse> anularPago(ReversaDTO compra) throws Exception {
+		GenericResponse genericResponse = new GenericResponse();
+		HttpStatus status = HttpStatus.NO_CONTENT;
+		Map<String, Object> details = new HashMap<>();
+		Configuration configuration = new Configuration();
+		try {
+			configuration = generarConfiguracionTransBank();
+			WebpayNullify transaction = new Webpay(configuration).getNullifyTransaction();
+
+				// Para comercios Webpay Plus Normal
+			long codigo = 597035165258L;
+			NullificationOutput result = transaction.nullify(compra.getAuthorizationCode(), compra.getAuthorizedAmount(), compra.getBuyOrder(), compra.getNullifyAmount());
+
+			if (result.getAuthorizationCode() != null) {
+				details.put("estadoSolicitud", "Transaccion reversada exitosamente!");
+				details.put("token", result.getToken());
+				details.put("authorizationCode", result.getAuthorizationCode());
+				details.put("authorizationDate", result.getAuthorizationDate());
+				details.put("balance", result.getBalance());
+				details.put("nullifiedAmount", result.getNullifiedAmount());
+				details.put("codigo", 1);
+				genericResponse.setCode(200);
+				genericResponse.setMsg("Transaccion exitosa!");
+				genericResponse.setResponse(details);
+				status = HttpStatus.OK;
+			}else if(result.getToken() == null){
+				details.put("codigo", 0);
+				details.put("estadoSolicitud", "Transaccion no fue reversada");
+				genericResponse.setCode(200);
+				genericResponse.setMsg("Transaccion no realizada!");
+				genericResponse.setResponse(details);
+				status = HttpStatus.OK;
+			}
+			
+		} catch (Exception e) {
+			System.out.println("Reversa anulada");
+			System.out.println(e);
+			details.put("codigo", e.getMessage());
+			details.put("estadoSolicitud", "transaccion no fue realizada intenta nuevamente más tarde");
+			genericResponse.setCode(500);
+			genericResponse.setMsg("Reversa Fallida!");
+			genericResponse.setResponse(details);
+			status = HttpStatus.OK;
 		}
 		return new ResponseEntity<>(genericResponse, status);
 	}

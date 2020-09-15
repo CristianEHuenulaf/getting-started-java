@@ -1,13 +1,28 @@
 package com.example.appengine.demos.springboot.services;
 
+import java.awt.Color;
+import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
+import javax.imageio.IIOImage;
+import javax.imageio.ImageIO;
+import javax.imageio.ImageWriteParam;
+import javax.imageio.ImageWriter;
+import javax.imageio.stream.ImageOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
 
 import org.springframework.http.ResponseEntity;
@@ -37,6 +52,8 @@ import cl.transbank.webpay.configuration.Configuration;
 public class WebpayServiceImpl implements WebpayService {
 
 	Util util = new Util();
+	
+	private static final Logger logger = LogManager.getLogger(WebpayServiceImpl.class);
 	
 	private Configuration generarConfiguracionTransBank() {
 		Configuration configuration = new Configuration();
@@ -134,12 +151,14 @@ public class WebpayServiceImpl implements WebpayService {
 			Billing billing = new Billing();
 			
 			if(!formAction.isEmpty()) {
-				billing.setIdBilling(billingId);
+				billing.setTransactionId(billingId);
 				billing.setToken(tokenWs);
 				genericResponse.setCode(200);
 				genericResponse.setMsg("Transaccion exitosa!");
 				genericResponse.setResponse(details);
 				status = HttpStatus.OK;
+				FirebaseWebPayService firebaseWebpay = new FirebaseWebPayService(FirebaseWebPayService.initializerFirestoreToken());
+				firebaseWebpay.saveBilling(buyOrder, tokenWs, billingId);
 				
 			}else {
 				genericResponse.setCode(500);
@@ -167,10 +186,6 @@ public class WebpayServiceImpl implements WebpayService {
 			TransactionResult transactionResult = new TransactionResult();
 						
 			if(output.getResponseCode() == 0) {
-				
-				FirebaseWebPayService firebaseWebpay = new FirebaseWebPayService(FirebaseWebPayService.initializerFirestoreToken(),FirebaseWebPayService.TOKEN);
-				firebaseWebpay.saveTokenBilling(result.getBuyOrder(), token);
-				
 				transactionResult.setBuyOrder(result.getBuyOrder());
 				transactionResult.setSessionId(result.getSessionId());
 				transactionResult.setCardNumber(result.getCardDetail().getCardNumber());
@@ -179,8 +194,13 @@ public class WebpayServiceImpl implements WebpayService {
 				transactionResult.setTransactionDate(result.getTransactionDate());
 				transactionResult.setVci(result.getVCI());
 				transactionResult.setUrlRedirect(result.getUrlRedirection());
-
-				String url =  "http://localhost:8080/ZXhpdG8="+result.getBuyOrder();
+				
+				//FirebaseWebPayService firebaseWebpay = new FirebaseWebPayService(FirebaseWebPayService.initializerFirestoreToken());
+				//Billing bill = firebaseWebpay.findBillingByToken(token);
+				//bill.setStatus(2);
+				//getQr(token);
+				
+				String url =  "http://localhost:8080/ZXhpdG8="+result.getBuyOrder()+","+output.getAuthorizationCode();
 				httpResponse.setHeader("Content-Type", "application/x-www-form-urlencoded");
 				httpResponse.setStatus(307);
 				httpResponse.setHeader("Location", url);
@@ -205,15 +225,17 @@ public class WebpayServiceImpl implements WebpayService {
 		Map<String, Object> details = new HashMap<>();
 		GenericResponse genericResponse = new GenericResponse();
 		HttpStatus status = null;
-		try {
+		try {			
 			JsonObject json = new Gson().fromJson(token, JsonObject.class);
-			String finalToken = json.get("token").getAsString();			
-			FirebaseWebPayService firebaseWebpay = new FirebaseWebPayService(FirebaseWebPayService.initializerFirestoreToken(), FirebaseWebPayService.TOKEN);
+			String finalToken = json.get("token").getAsString();
+			FirebaseWebPayService firebaseWebpay = new FirebaseWebPayService(FirebaseWebPayService.initializerFirestoreToken());
 			Billing billing = firebaseWebpay.findBillingByToken(finalToken);
 			
-			File file = QRCode.from(billing.getIdBilling()).to(ImageType.PNG).withSize(300, 300).file();
+			File file = QRCode.from(billing.getTransactionId()).to(ImageType.PNG).withSize(300, 300).file();
 			String base64 = Util.encoder(file.getAbsolutePath());
-		
+			byte[] fileContent = readFileToByteArray(file);
+			
+			//firebaseWebpay.saveImage(fileContent, file, billing.getTransactionId(), billing.getIdStore());
 			if(file.exists()) {
 				file.delete();
 			}
@@ -238,5 +260,23 @@ public class WebpayServiceImpl implements WebpayService {
 		
 		return new ResponseEntity<>(genericResponse, status );
 	}
+	
+	public byte[] fileToByteArray(String imgSource) {
+		File file = new File(imgSource);
+		byte[] bArray = readFileToByteArray(file);
+		return bArray;
+	}
 
+	private static byte[] readFileToByteArray(File file) {
+		FileInputStream fis = null;
+		byte[] bArray = new byte[(int) file.length()];
+		try {
+			fis = new FileInputStream(file);
+			fis.read(bArray);
+			fis.close();
+		} catch (IOException ioExp) {
+			ioExp.printStackTrace();
+		}
+		return bArray;
+	}
 }
