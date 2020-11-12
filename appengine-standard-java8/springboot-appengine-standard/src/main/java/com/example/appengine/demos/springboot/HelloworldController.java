@@ -60,12 +60,26 @@ public class HelloworldController {
 	public ResponseEntity<GenericResponse> webPayRequest(@RequestBody Compra compra) throws Exception {
 		return webpayService.createRequest(compra);
 	}
+	
+	@CrossOrigin
+	@PostMapping("/get-tokenNew")
+	public ResponseEntity<GenericResponse> webPayRequestNew(@RequestBody Compra compra) throws Exception {
+		return webpayService.createRequestNew(compra);
+	}
 
 	@CrossOrigin
 	@PostMapping("/webpay-result")
 	public void webPayEnd(HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
 
 		webpayService.validateTransaction(httpRequest, httpResponse);
+
+	}
+	
+	@CrossOrigin
+	@PostMapping("/webpay-resultNew")
+	public void webPayEndNew(HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
+
+		webpayService.validateTransactionNew(httpRequest, httpResponse);
 
 	}
 
@@ -106,6 +120,12 @@ public class HelloworldController {
 	@PostMapping("oneClick/registrarPago")
 	public ResponseEntity<GenericResponse> registrarPago(@RequestBody CompraOneClick compra) throws Exception {
 		return oneClickService.realizaPago(compra);
+	}
+	
+	@CrossOrigin
+	@PostMapping("oneClick/registrarPagoNew")
+	public ResponseEntity<GenericResponse> registrarPagoNew(@RequestBody CompraOneClick compra) throws Exception {
+		return oneClickService.realizaPagoNew(compra);
 	}
 
 	@CrossOrigin

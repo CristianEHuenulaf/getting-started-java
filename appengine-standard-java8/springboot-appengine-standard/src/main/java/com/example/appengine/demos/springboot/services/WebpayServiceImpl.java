@@ -173,6 +173,66 @@ public class WebpayServiceImpl implements WebpayService {
 		
 		return new ResponseEntity<>(genericResponse,status);
 	}
+	
+	public ResponseEntity<GenericResponse> createRequestNew(Compra compra) throws Exception {
+		
+		GenericResponse genericResponse = new GenericResponse();
+		HttpStatus status = null;
+		
+		String buyOrder = compra.getBuyOrder();
+		String sessionId = compra.getSessionId();
+        double amount = compra.getAmount();
+        String finalUrl = compra.getUrlRedirect();
+        String billingId = compra.getBillingId();
+		
+        Map<String, Object> details = new HashMap<>();
+        details.put("buyOrder", buyOrder);
+        details.put("sessionId", sessionId);
+        details.put("amount", amount);
+        details.put("billingId", billingId);
+      
+		Configuration configuration = new Configuration();
+		try {
+			configuration = generarConfiguracionTransBank();
+			WebpayNormal transaction = new Webpay(configuration).getNormalTransaction();
+			
+			WsInitTransactionOutput initResult = transaction.initTransaction(amount, sessionId, buyOrder,"https://pikapp-8be64.appspot.com/webpay-result", finalUrl);	
+			
+			ObjectMapper mapper = new ObjectMapper();
+			// Converting the Object to JSONString
+			String jsonString = mapper.writeValueAsString(initResult);
+			
+			
+			String formAction = initResult.getUrl();
+			String tokenWs = initResult.getToken();
+					
+			details.put("url", formAction);
+			details.put("token", tokenWs);
+			Billing billing = new Billing();
+			
+			if(!formAction.isEmpty()) {
+				billing.setTransactionId(billingId);
+				billing.setToken(tokenWs);
+				genericResponse.setCode(200);
+				genericResponse.setMsg("Transaccion exitosa!");
+				genericResponse.setResponse(details);
+				status = HttpStatus.OK;
+				FirebaseWebPayService firebaseWebpay = new FirebaseWebPayService(FirebaseWebPayService.initializerFirestoreToken());
+				firebaseWebpay.saveBilling(buyOrder, tokenWs, compra.getIdCompra());
+				
+			}else {
+				genericResponse.setCode(500);
+				genericResponse.setMsg("Transaccion exitosa!");
+				status = HttpStatus.NO_CONTENT;
+			}
+						
+			
+		} catch (TransactionCreateException e ) {
+			e.printStackTrace();
+		}
+		
+		return new ResponseEntity<>(genericResponse,status);
+	}
 
 	
 	public void validateTransaction(HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
@@ -206,6 +266,73 @@ public class WebpayServiceImpl implements WebpayService {
 				httpResponse.setHeader("Location", url);
 
 			}else {
+				System.out.println("Transaccion anulada");
+				httpResponse.setHeader("Content-Type", "application/x-www-form-urlencoded");	 
+				httpResponse.setStatus(307);
+				httpResponse.setHeader("Location", "http://localhost:8080/transaccionRechazada");
+		
+			}
+				
+		}catch(Exception ex) {
+				
+			System.out.println("Error: "+ex.getLocalizedMessage());
+			ex.printStackTrace();
+		}
+
+	}
+	
+	public void validateTransactionNew(HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
+		String token = httpRequest.getParameter("token_ws");
+		Configuration configuration = new Configuration();
+		try {
+			configuration = generarConfiguracionTransBank();
+			WebpayNormal transaction = new Webpay(configuration).getNormalTransaction();
+			TransactionResultOutput result = transaction.getTransactionResult(token);	
+			WsTransactionDetailOutput output = result.getDetailOutput().get(0);
+			TransactionResult transactionResult = new TransactionResult();
+	        ObjectMapper oMapper = new ObjectMapper();
+	    
+	        Map<String, String> mapResult = oMapper.convertValue(result, Map.class);
+	        mapResult.remove("urlRedirection");
+	        mapResult.remove("cardExpirationDate");
+	        mapResult.remove("transactionDate");
+	        mapResult.remove("detailOutput");
+	        mapResult.remove("cardDetail");
+	        mapResult.put("responseCode", String.valueOf(result.getDetailOutput().get(0).getResponseCode()));
+			if(output.getResponseCode() == 0) {
+				mapResult.put("cardNumber", result.getCardDetail().getCardNumber());
+				mapResult.put("paymentTypeCode", result.getDetailOutput().get(0).getPaymentTypeCode());
+		        mapResult.put("cardExpirationDate", result.getCardDetail().getCardExpirationDate());
+		        mapResult.put("buyOrder", result.getDetailOutput().get(0).getBuyOrder());
+		        mapResult.put("authorizationCode", result.getDetailOutput().get(0).getAuthorizationCode());
+
+		        
+		        System.out.println("prueba >>"+mapResult);
+		        
+				FirebaseWebPayService firebaseWebpay = new FirebaseWebPayService(FirebaseWebPayService.initializerFirestoreToken());
+				Billing bill = firebaseWebpay.findBillingByTokenNew(token);
+				firebaseWebpay.saveBilling(bill.getId(), mapResult);
+		        
+				transactionResult.setBuyOrder(result.getBuyOrder());
+				transactionResult.setSessionId(result.getSessionId());
+				transactionResult.setCardNumber(result.getCardDetail().getCardNumber());
+				transactionResult.setCardExpirationDate(result.getCardDetail().getCardExpirationDate());
+				transactionResult.setAccoutingDate(result.getAccountingDate());
+				transactionResult.setTransactionDate(result.getTransactionDate());
+				transactionResult.setVci(result.getVCI());
+				transactionResult.setUrlRedirect(result.getUrlRedirection());
+				//bill.setStatus(2);
+				//getQr(token);
+				
+				String url =  "http://localhost:8080/ZXhpdG8="+result.getBuyOrder()+","+output.getAuthorizationCode();
+				httpResponse.setHeader("Content-Type", "application/x-www-form-urlencoded");
+				httpResponse.setStatus(307);
+				httpResponse.setHeader("Location", url);
+
+			}else {
+				FirebaseWebPayService firebaseWebpay = new FirebaseWebPayService(FirebaseWebPayService.initializerFirestoreToken());
+				Billing bill = firebaseWebpay.findBillingByToken(token);
+				firebaseWebpay.saveBilling(bill.getTransactionId(), mapResult);
 				System.out.println("Transaccion anulada");
 				httpResponse.setHeader("Content-Type", "application/x-www-form-urlencoded");	 
 				httpResponse.setStatus(307);

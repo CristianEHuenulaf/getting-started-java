@@ -16,6 +16,7 @@ import com.example.appengine.demos.springboot.model.CompraOneClick;
 import com.example.appengine.demos.springboot.model.ReversaDTO;
 import com.example.appengine.demos.springboot.model.UsuarioOneClick;
 import com.example.appengine.demos.springboot.util.Util;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.transbank.webpay.wswebpay.service.NullificationOutput;
 import com.transbank.webpayserver.webservices.OneClickFinishInscriptionOutput;
 import com.transbank.webpayserver.webservices.OneClickInscriptionOutput;
@@ -245,6 +246,57 @@ public class OneClickServiceImpl {
 //				if(urlQr != null) {
 //					fire.updateBilling(output, compra, base64);
 //				}
+				genericResponse.setCode(200);
+				genericResponse.setMsg("Transaccion exitosa!");
+				genericResponse.setResponse(details);
+				status = HttpStatus.OK;
+			}else {
+				genericResponse.setCode(500);
+				genericResponse.setMsg("Transaccion Fallida!");
+				status = HttpStatus.NO_CONTENT;
+			}
+			
+			
+		} catch (Exception e) {
+			// TODO: handle exception
+			System.out.println("Transaccion anulada");
+			System.out.println(e);
+			genericResponse.setCode(500);
+			genericResponse.setMsg("Transaccion Fallida!");
+			status = HttpStatus.NO_CONTENT;
+		}
+		
+		return new ResponseEntity<>(genericResponse, status);
+	}
+	
+	public ResponseEntity<GenericResponse> realizaPagoNew(CompraOneClick compra) throws Exception {
+		GenericResponse genericResponse = new GenericResponse();
+		HttpStatus status = HttpStatus.NO_CONTENT;
+		Map<String, Object> details = new HashMap<>();
+		Configuration configuration = new Configuration();
+		try {
+			FirebaseWebPayService fire = new FirebaseWebPayService(FirebaseWebPayService.initializerFirestoreToken());
+			
+			configuration = generarConfiguracionTransBank();
+			WebpayOneClick transaction = new Webpay(configuration).getOneClickTransaction();
+			OneClickPayOutput output = transaction.authorize(compra.getBuyOrder(), compra.getTbkUser(), compra.getUserName(), compra.getAmount());
+			ObjectMapper oMapper = new ObjectMapper();
+	        Map<String, String> mapResult = oMapper.convertValue(output, Map.class);
+	        
+	        System.out.println("pruebs >>"+mapResult);
+	        fire.saveBillingOneClick(compra.getIdCompra(), mapResult);
+	        
+			if (output.getResponseCode() == 0) {
+				File file = QRCode.from(String.valueOf(output.getTransactionId())).to(ImageType.PNG).withSize(300, 300).file();
+				String base64 = Util.encoder(file.getAbsolutePath());
+				details.put("authorizationCode", output.getAuthorizationCode());
+				details.put("creditCardType", output.getCreditCardType().value());
+				details.put("buyOrder", compra.getBuyOrder());
+				details.put("last4CardDigits", output.getLast4CardDigits());
+				details.put("transactionId", output.getTransactionId());
+				details.put("responseCode", output.getResponseCode());
+				details.put("qr", base64);
+				
 				genericResponse.setCode(200);
 				genericResponse.setMsg("Transaccion exitosa!");
 				genericResponse.setResponse(details);

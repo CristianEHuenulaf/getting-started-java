@@ -8,18 +8,27 @@ public class Compra {
 	private double amount;
 	private String billingId;
 	private String urlRedirect;
+	private String idCompra;
 
 	
 	
 	public Compra() {}
-	public Compra(String buyOrder, String sessionId, double amount ,String billingId ,String urlRedirect) {
+	public Compra(String buyOrder, String sessionId, double amount ,String billingId ,String urlRedirect, String idCompra) {
 		
 		this.buyOrder = buyOrder;
 		this.sessionId = sessionId;
 		this.amount = amount;
 		this.billingId = billingId;
 		this.urlRedirect = urlRedirect;
+		this.idCompra = idCompra;
 		
+	}
+	
+	public String getIdCompra() {
+		return idCompra;
+	}
+	public void setIdCompra(String idCompra) {
+		this.idCompra = idCompra;
 	}
 	public String getBuyOrder() {
 		return buyOrder;

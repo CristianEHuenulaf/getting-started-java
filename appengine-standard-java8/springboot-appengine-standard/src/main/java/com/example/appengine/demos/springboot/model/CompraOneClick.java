@@ -9,18 +9,29 @@ public class CompraOneClick {
 	private BigDecimal amount;
 	private String tbkUser;
 	private String userName;
+	private String idCompra;
 	
-	public CompraOneClick(long buyOrder, String sessionId, BigDecimal amount, String tbkUser, String userName) {
+	public CompraOneClick(long buyOrder, String sessionId, BigDecimal amount, String tbkUser, String userName, String idCompra) {
 		this.buyOrder = buyOrder;
 		this.sessionId = sessionId;
 		this.amount = amount;
 		this.tbkUser = tbkUser;
 		this.userName = userName;
+		this.idCompra = idCompra;
 	}
 	
 	public CompraOneClick() {
 	}
 	
+	
+	public String getIdCompra() {
+		return idCompra;
+	}
+
+	public void setIdCompra(String idCompra) {
+		this.idCompra = idCompra;
+	}
+
 	public long getBuyOrder() {
 		return buyOrder;
 	}

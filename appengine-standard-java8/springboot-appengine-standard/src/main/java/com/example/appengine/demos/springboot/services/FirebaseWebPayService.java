@@ -125,6 +125,30 @@ public class FirebaseWebPayService {
 		ApiFutures.allAsList(futures);
 		
 	}
+	
+	public void saveBilling(String id, Map<String, String> outPut) throws InterruptedException, ExecutionException {
+		// Create a Map to store the data we want to set
+		Map<String, Object> docData = new HashMap<>();
+		docData.putAll(outPut);
+		CollectionReference billing = dbPikapp.collection("billing");
+		List<ApiFuture<WriteResult>> futures = new ArrayList<>();
+		System.out.println("prueba >>"+docData);
+		futures.add(billing.document(id).update(docData));
+		ApiFutures.allAsList(futures);
+		
+	}
+	
+	public void saveBillingOneClick(String id, Map<String, String> outPut) throws InterruptedException, ExecutionException {
+		// Create a Map to store the data we want to set
+		Map<String, Object> docData = new HashMap<>();
+		docData.putAll(outPut);
+		CollectionReference billing = dbPikapp.collection("billing");
+		List<ApiFuture<WriteResult>> futures = new ArrayList<>();
+		System.out.println("prueba >>"+docData);
+		futures.add(billing.document(id).set(docData));
+		ApiFutures.allAsList(futures);
+		
+	}
 
 	public Billing findBillingByToken(String token) throws Exception {
 		Billing bill = new Billing();
@@ -139,6 +163,30 @@ public class FirebaseWebPayService {
 			System.out.println(document.getId());
 			if (document.exists()) {
 				bill = document.toObject(Billing.class);
+				System.out.println("Document data: " + document.getData());
+				System.out.println("Billing data: " + bill.toString());
+			} else {
+				System.out.println("No such document!");
+			}
+		}
+		// [END fs_get_doc_as_map]
+		return bill;
+	}
+	
+	public Billing findBillingByTokenNew(String token) throws Exception {
+		Billing bill = new Billing();
+		ObjectMapper oMapper = new ObjectMapper();
+		// [START fs_get_doc_as_map]
+		CollectionReference billing = dbPikapp.collection("billing");
+		Query query = billing.whereEqualTo("token", token);
+		// retrieve query results asynchronously using query.get()
+		ApiFuture<QuerySnapshot> querySnapshot = query.get();
+		System.out.println(querySnapshot.get().getDocuments());
+		for (DocumentSnapshot document : querySnapshot.get().getDocuments()) {
+			System.out.println(document.getId());
+			if (document.exists()) {
+				bill = document.toObject(Billing.class);
+				bill.setId(document.getId());
 				System.out.println("Document data: " + document.getData());
 				System.out.println("Billing data: " + bill.toString());
 			} else {
